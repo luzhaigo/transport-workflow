@@ -30,12 +30,10 @@ app.post('/carrier/request-job', (req, res) => {
     return;
   }
   if (origin === destination) {
-    res
-      .status(400)
-      .json({
-        status: 'ERROR',
-        error: 'Origin and destination cannot be the same',
-      });
+    res.status(400).json({
+      status: 'ERROR',
+      error: 'Origin and destination cannot be the same',
+    });
     console.log(`Origin and destination cannot be the same`);
     return;
   }

@@ -2,19 +2,21 @@
   "name": "transport-workflow",
   "version": "1.0.0",
   "description": "",
-  "main": "3rd-party-server.js",
+  "main": "src/ferovinum.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node 3rd-party-server.js & nodemon src/ferovinum.js"
+    "start": "node 3rd-party-server.js & node src/ferovinum.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@open-draft/logger": "^0.3.0",
+    "@types/javascript-state-machine": "^2.4.6",
     "axios": "^1.6.8",
     "body-parser": "^1.20.2",
     "express": "^4.19.2",
     "express-validator": "^7.0.1",
+    "javascript-state-machine": "^3.1.0",
     "uuid": "^9.0.1"
   },
   "prettier": {
