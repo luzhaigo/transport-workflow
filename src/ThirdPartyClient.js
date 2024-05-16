@@ -10,7 +10,7 @@ const {
 const {
   stringify,
   delay,
-  stateMachineFactory,
+  jobStateMachineFactory,
   writeCollectionConfirmationFile,
   writeLandingConfirmationFile,
 } = require('./utils');
@@ -70,7 +70,7 @@ class ThirdPartyClient {
 
     logger.info(`executing jobId: ${job.jobId}`);
 
-    const fsm = stateMachineFactory();
+    const jsm = jobStateMachineFactory();
     let running = true;
     // eslint-disable-next-line no-constant-condition
     while (running) {
@@ -84,7 +84,7 @@ class ThirdPartyClient {
       } = job;
 
       try {
-        switch (fsm.state) {
+        switch (jsm.state) {
           case FSM_State.ACCEPT: {
             logger.info(`release product: ${productId}`);
             const releaseProductData = await API.releaseProduct({
@@ -100,22 +100,10 @@ class ThirdPartyClient {
               running = false;
               break;
             }
-            fsm.acceptToProductReleased();
+            jsm.acceptToProductReleased();
             break;
           }
-          case FSM_State.PRODUCT_RELEASED: {
-            const jobStatusData = await API.queryJobStatus(jobId);
-            logger.info(`query job status: ${stringify(jobStatusData)}`);
-            if (
-              jobStatusData.status !== JobStatus.PENDING &&
-              jobStatusData.status !== JobStatus.RELEASED
-            ) {
-              running = false;
-              break;
-            }
-            fsm.productReleasedToJobPending();
-            break;
-          }
+          case FSM_State.PRODUCT_RELEASED:
           case FSM_State.JOB_PENDING: {
             const jobStatusData = await API.queryJobStatus(jobId);
             logger.info(`query job status: ${stringify(jobStatusData)}`);
@@ -127,8 +115,8 @@ class ThirdPartyClient {
               break;
             }
             if (jobStatusData.status === JobStatus.RELEASED)
-              fsm.jobPendingToJobReleased();
-            else fsm.jobPendingToJobPending();
+              jsm.jobPendingToJobReleased();
+            else jsm.pollingJobStatus();
             break;
           }
           case FSM_State.JOB_RELEASED: {

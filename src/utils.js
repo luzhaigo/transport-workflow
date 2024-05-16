@@ -6,32 +6,29 @@ const stringify = (obj) => JSON.stringify(obj, null, 2);
 
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
-function stateMachineFactory() {
-  return new StateMachine({
-    init: FSM_State.ACCEPT,
-    transitions: [
-      {
-        name: 'acceptToProductReleased',
-        from: FSM_State.ACCEPT,
-        to: FSM_State.PRODUCT_RELEASED,
-      },
-      {
-        name: 'productReleasedToJobPending',
-        from: FSM_State.PRODUCT_RELEASED,
-        to: FSM_State.JOB_PENDING,
-      },
-      {
-        name: 'jobPendingToJobPending',
-        from: FSM_State.JOB_PENDING,
-        to: FSM_State.JOB_PENDING,
-      },
-      {
-        name: 'jobPendingToJobReleased',
-        from: FSM_State.JOB_PENDING,
-        to: FSM_State.JOB_RELEASED,
-      },
-    ],
-  });
+const JobStateMachine = new StateMachine.factory({
+  init: FSM_State.ACCEPT,
+  transitions: [
+    {
+      name: 'acceptToProductReleased',
+      from: FSM_State.ACCEPT,
+      to: FSM_State.PRODUCT_RELEASED,
+    },
+    {
+      name: 'pollingJobStatus',
+      from: [FSM_State.PRODUCT_RELEASED, FSM_State.JOB_PENDING],
+      to: FSM_State.JOB_PENDING,
+    },
+    {
+      name: 'jobPendingToJobReleased',
+      from: FSM_State.JOB_PENDING,
+      to: FSM_State.JOB_RELEASED,
+    },
+  ],
+});
+
+function jobStateMachineFactory() {
+  return new JobStateMachine();
 }
 
 async function writeCollectionConfirmationFile({
@@ -66,7 +63,7 @@ async function writeLandingConfirmationFile({
 module.exports = {
   stringify,
   delay,
-  stateMachineFactory,
+  jobStateMachineFactory,
   writeCollectionConfirmationFile,
   writeLandingConfirmationFile,
 };
