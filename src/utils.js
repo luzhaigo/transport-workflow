@@ -24,6 +24,16 @@ const JobStateMachine = new StateMachine.factory({
       from: FSM_State.JOB_PENDING,
       to: FSM_State.JOB_RELEASED,
     },
+    {
+      name: 'pollingJobReleasedToPollingLanded',
+      from: [FSM_State.JOB_RELEASED, FSM_State.LANDED_POLLING],
+      to: FSM_State.LANDED_POLLING,
+    },
+    {
+      name: 'toEnd',
+      from: FSM_State.LANDED_POLLING,
+      to: FSM_State.END,
+    },
   ],
 });
 

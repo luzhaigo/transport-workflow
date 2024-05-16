@@ -1,5 +1,4 @@
 const { Logger } = require('@open-draft/logger');
-const API = require('./api');
 const {
   RequestStatus,
   JobStatus,
@@ -18,17 +17,18 @@ const {
 const logger = new Logger('ThirdPartyClient');
 
 class ThirdPartyClient {
-  constructor({ pollInterval = 1000, concurrency = 5 } = {}) {
+  constructor({ pollInterval = 1000, concurrency = 5, api } = {}) {
     this.isStart = false;
     this.pollInterval = pollInterval;
     this.currentConcurrency = 0;
     this.concurrency = concurrency;
     this.pendingJobs = [];
+    this.api = api;
   }
 
   // handle business logic
   async requestJob(job) {
-    const { status, error, jobId, ...rest } = await API.createJob(job);
+    const { status, error, jobId, ...rest } = await this.api.createJob(job);
     logger.info(
       `response of rquestJob: ${stringify({ status, error, jobId, ...rest })}`,
     );
@@ -87,7 +87,7 @@ class ThirdPartyClient {
         switch (jsm.state) {
           case FSM_State.ACCEPT: {
             logger.info(`release product: ${productId}`);
-            const releaseProductData = await API.releaseProduct({
+            const releaseProductData = await this.api.releaseProduct({
               productId,
               warehouseId: origin,
               quantity,
@@ -105,7 +105,7 @@ class ThirdPartyClient {
           }
           case FSM_State.PRODUCT_RELEASED:
           case FSM_State.JOB_PENDING: {
-            const jobStatusData = await API.queryJobStatus(jobId);
+            const jobStatusData = await this.api.queryJobStatus(jobId);
             logger.info(`query job status: ${stringify(jobStatusData)}`);
             if (
               jobStatusData.status !== JobStatus.PENDING &&
@@ -126,11 +126,15 @@ class ThirdPartyClient {
               productId,
               quantity,
             });
+            jsm.pollingJobReleasedToPollingLanded();
+            break;
+          }
+          case FSM_State.LANDED_POLLING: {
             logger.info(
               `query warehouse ${destination} product ${productId} status`,
             );
             const warehouseProductStatus =
-              await API.queryWarehouseProductStatus({
+              await this.api.queryWarehouseProductStatus({
                 warehouseId: destination,
                 productId,
               });
@@ -152,6 +156,7 @@ class ThirdPartyClient {
                 quantity,
               });
               {
+                jsm.toEnd();
                 running = false;
                 break;
               }
